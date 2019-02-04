@@ -1,0 +1,88 @@
+
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <TimeLib.h> //Library from https://www.pjrc.com/teensy/td_libs_Time.html --> https://github.com/PaulStoffregen/Time
+
+// const char* ssid = "SSID1";
+// const char* password = "Key1";
+
+const char* ssid = "SSID2";
+const char* password = "Key2";
+
+const int debug = 1;
+const int epochDelay = 1000;
+unsigned long oldEpoch = 0;
+unsigned long pctime = 0;
+
+int firstLoop = 1; // 1 means first loop needs to happen
+
+void setup () {
+ 
+  Serial.begin(9600);
+  WiFi.begin(ssid, password);
+ 
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Connecting...");
+    delay(5000);
+    
+ 
+  }
+ 
+}
+void loop() {
+
+  if(firstLoop == 1) { //when loop is first run get time
+    pctime = getEpoch();
+    setTime(pctime);
+    firstLoop = 0;
+    if(debug==1){
+      Serial.println("First Loop Done");
+    }
+       
+  }
+  
+  // Main loop starts here
+
+   Serial.print(now());
+   Serial.print(" / ");
+   Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.println("");
+  delay(10000);    //Send a request every x (x1000) = seconds
+  
+  // Mail loop ends here
+ }
+
+
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
+
+
+long getEpoch() {
+  
+  if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
+ 
+    HTTPClient http;  //Declare an object of class HTTPClient
+ 
+    http.begin("http://tellthetime.azurewebsites.net/index.php");  //Specify request destination
+    int httpCode = http.GET();                                                                  //Send the request
+ 
+    if (httpCode > 0) { //Check the returning code
+ 
+      String payload = http.getString();   //Get the request response payload
+      long payloadlong = payload.toInt() + 3600;
+      return payloadlong;
+    }
+ 
+    http.end();   //Close connection
+}
+
+}
+
+ 
